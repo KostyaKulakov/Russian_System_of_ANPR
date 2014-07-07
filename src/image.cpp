@@ -33,23 +33,23 @@ bool Image::recognize()
 	frames.clear();
 	licenseSymbols.clear();
 	textLicense.clear();
-	
-    std::vector<cv::Rect> faces;
 
-    cv::Mat gray, smallImg(cvRound (mimage.rows/scale), cvRound(mimage.cols/scale), CV_8UC1);
+	std::vector<cv::Rect> faces;
 
-    cv::cvtColor(mimage, gray, CV_BGR2GRAY);
-    cv::resize(gray, smallImg, smallImg.size(), 0, 0, cv::INTER_LINEAR);
-    cv::equalizeHist(smallImg, smallImg);
-	
+	cv::Mat gray, smallImg(cvRound (mimage.rows/scale), cvRound(mimage.cols/scale), CV_8UC1);
+
+	cv::cvtColor(mimage, gray, CV_BGR2GRAY);
+	cv::resize(gray, smallImg, smallImg.size(), 0, 0, cv::INTER_LINEAR);
+	cv::equalizeHist(smallImg, smallImg);
+
 	if(!iscascadeLoad)
 		return false;
 
-    cascade.detectMultiScale(smallImg, faces,
+	cascade.detectMultiScale(smallImg, faces,
 		1.1, 2, 0 | cv::CASCADE_SCALE_IMAGE
-        ,
+		,
 		cv::Size(10, 10));        
-	
+
 	for(auto& r : faces)
 	{
 		cv::Point first = cv::Point(r.x*scale, r.y*scale);
@@ -57,13 +57,13 @@ bool Image::recognize()
 		
 		frames.push_back(mimage(cv::Rect(first.x, first.y, two.x - first.x, two.y - first.y)));
 	}
-	
+
 	for(auto& f : frames)
 		recognizeSymbols(f);
-	
+
 	if(!licenseSymbols.empty())
 		recognizeLicenseNumber();
-	
+
 	return true;
 }
 
