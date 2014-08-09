@@ -1,10 +1,8 @@
 #include "image.h"
 
-LicenseSymbolsArea::LicenseSymbolsArea(cv::Mat& mframe, std::vector<mArea> mframeAreaSymbols)
-{
-	frame = mframe;
-	frameAreaSymbols = mframeAreaSymbols;
-}
+LicenseSymbolsArea::LicenseSymbolsArea(cv::Mat& mframe, std::vector<mArea>& mframeAreaSymbols) :
+	frameAreaSymbols(mframeAreaSymbols), frame(mframe)
+{}
 
 Image::Image() 
 {
@@ -88,7 +86,7 @@ void Image::saveFrames()
 	for(size_t i = 0; i < frames.size(); ++i)
 	{
 		char name[8];
-		sprintf(name, "f%d.jpg", i);
+		sprintf(name, "f%Iu.jpg", i);
 		cv::imwrite(name, frames.at(i));
 	}
 }
@@ -103,7 +101,7 @@ void Image::saveSymbols()
 		for(size_t b = 0; b < l.frameAreaSymbols.size(); ++b, ++i)
 		{
 			char name[8];
-			sprintf(name, "%d.jpg", i);
+			sprintf(name, "%Iu.jpg", i);
 			
 			cv::Mat image = src(cv::Rect(l.frameAreaSymbols.at(b).minX,
 							l.frameAreaSymbols.at(b).minY,
@@ -140,7 +138,7 @@ void Image::showSymbol()
 							
 		
 		char wndname[50];
-		sprintf(wndname, "Symbols %u", nwnd);
+		sprintf(wndname, "Symbols %Iu", nwnd);
 		
 		cv::namedWindow(wndname, cv::WINDOW_AUTOSIZE );
 		cv::imshow(wndname, img);

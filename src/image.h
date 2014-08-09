@@ -23,7 +23,7 @@
 
 struct LicenseSymbolsArea
 {
-	LicenseSymbolsArea(cv::Mat& mframe, std::vector<mArea> mframeAreaSymbols);
+	LicenseSymbolsArea(cv::Mat& mframe, std::vector<mArea>& mframeAreaSymbols);
 	
 	cv::Mat frame;
 	std::vector<mArea> frameAreaSymbols;
