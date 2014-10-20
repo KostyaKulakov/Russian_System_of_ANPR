@@ -42,11 +42,10 @@ bool Image::recognize()
 
 	if(!iscascadeLoad)
 		return false;
-
-	cascade.detectMultiScale(smallImg, faces,
-		1.1, 2, 0 | cv::CASCADE_SCALE_IMAGE
-		,
-		cv::Size(10, 10));        
+		
+    cascade.detectMultiScale(smallImg, faces,
+		1.1, 10, 5,
+		cv::Size(70, 21));  
 
 	for(auto& r : faces)
 	{
