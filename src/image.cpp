@@ -34,11 +34,24 @@ bool Image::recognize()
 
 	std::vector<cv::Rect> faces;
 
-	cv::Mat gray, smallImg(cvRound (mimage.rows/scale), cvRound(mimage.cols/scale), CV_8UC1);
+	float imageAspect = (float)mimage.size().width / (float)mimage.size().height;
+	int width, height;
 
+    if (imageAspect > 1.0f)
+	{
+		width = 800;
+		height = 800/imageAspect;
+	}
+	else
+	{
+		width = 800 * imageAspect;
+		height = 800;
+	}
+	
+	cv::Mat gray, smallImg(height, width, CV_8UC1);
+	
 	cv::cvtColor(mimage, gray, CV_BGR2GRAY);
 	cv::resize(gray, smallImg, smallImg.size(), 0, 0, cv::INTER_LINEAR);
-	cv::equalizeHist(smallImg, smallImg);
 
 	if(!iscascadeLoad)
 		return false;
@@ -46,21 +59,23 @@ bool Image::recognize()
     cascade.detectMultiScale(smallImg, faces,
 		1.1, 10, 5,
 		cv::Size(70, 21));  
+	
+	cv::resize(mimage, mimage, smallImg.size(), 0, 0, cv::INTER_LINEAR);
 
 	for(auto& r : faces)
 	{
-		cv::Point first = cv::Point(r.x*scale, r.y*scale);
-		cv::Point two	= cv::Point((r.x + r.width)*scale, (r.y + r.height)*scale);
-		
-		frames.push_back(mimage(cv::Rect(first.x, first.y, two.x - first.x, two.y - first.y)));
-	}
+		cv::Point first = cv::Point(r.x, r.y);
+		cv::Point two	= cv::Point((r.x + r.width), (r.y + r.height));
 
+		frames.push_back(mimage(cv::Rect(first.x, first.y, two.x-first.x , two.y-first.y)));
+	}
+	
 	for(auto& f : frames)
 		recognizeSymbols(f);
-
+	
 	if(!licenseSymbols.empty())
 		recognizeLicenseNumber();
-
+	
 	return true;
 }
 
