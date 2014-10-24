@@ -54,7 +54,6 @@ private:
 	bool recognizeSymbols(cv::Mat& src);
 	bool recognizeLicenseNumber();
 	bool isDuplicat(mArea& a, std::vector<mArea>& vec);
-	//bool isInserted(mArea& a, std::vector<mArea>& vec);
 	
 	std::string		symbolDigit	=	"0123456789";
 	std::string		symbolChar	=	"abekmhopctyxABEKMHOPCTYX";
