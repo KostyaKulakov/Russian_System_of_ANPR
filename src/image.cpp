@@ -99,8 +99,10 @@ void Image::saveFrames()
 {	
 	for(size_t i = 0; i < frames.size(); ++i)
 	{
-		char name[8];
-		sprintf(name, "f%Iu.jpg", i);
+		std::string name("frame"			+
+						std::to_string(i)	+
+						".jpg");
+						
 		cv::imwrite(name, frames.at(i));
 	}
 }
@@ -114,8 +116,8 @@ void Image::saveSymbols()
 		
 		for(size_t b = 0; b < l.frameAreaSymbols.size(); ++b, ++i)
 		{
-			char name[8];
-			sprintf(name, "%Iu.jpg", i);
+			std::string name(std::to_string(i)	+
+							".jpg");
 			
 			cv::Mat image = src(cv::Rect(l.frameAreaSymbols.at(b).minX,
 							l.frameAreaSymbols.at(b).minY,
@@ -150,10 +152,9 @@ void Image::showSymbol()
 							cv::Point(l.frameAreaSymbols.at(i).maxX, l.frameAreaSymbols.at(i).maxY),
 							cv::Scalar(0,255,0), 2);
 							
-		
-		char wndname[50];
-		sprintf(wndname, "Symbols %Iu", nwnd);
-		
+		std::string wndname("Symbols"			+
+							std::to_string(nwnd));
+
 		cv::namedWindow(wndname, cv::WINDOW_AUTOSIZE );
 		cv::imshow(wndname, img);
 		
