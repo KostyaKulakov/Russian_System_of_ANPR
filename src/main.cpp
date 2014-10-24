@@ -17,7 +17,6 @@ int main(int argc, char** argv)
 	
 	alpr.recognize(img);
 	alpr.saveFrames();
-	//alpr.saveSymbols();
 	alpr.showSymbol();
 	
 	for(auto& x : alpr.getLicenseText())
