@@ -38,8 +38,8 @@ public:
 	bool recognize();
 	bool recognize(const cv::Mat& img);
 	
-	std::vector<std::string>	getLicenseText() const;
-	std::vector<cv::Mat>		getFrames()		 const;
+	std::vector<std::string> getLicenseText() const;
+	std::vector<cv::Mat>     getFrames()      const;
 	
 	void setImage(const cv::Mat& img);
 	
@@ -55,11 +55,11 @@ private:
 	bool recognizeLicenseNumber();
 	bool isDuplicat(mArea& a, std::vector<mArea>& vec);
 	
-	std::string		symbolDigit	=	"0123456789";
-	std::string		symbolChar	=	"abekmhopctyxABEKMHOPCTYX";
-	const unsigned	thresh		=	160;
-	const float		scale		=	1.8;
-	bool 			iscascadeLoad;
+	const std::string symbolDigit = "0123456789";
+	const std::string symbolChar  = "abekmhopctyxABEKMHOPCTYX";
+	const unsigned thresh         = 160;
+	const float scale             = 1.8;
+	bool  iscascadeLoad;
 
 	cv::Mat mimage;
 	std::vector<LicenseSymbolsArea> licenseSymbols;
