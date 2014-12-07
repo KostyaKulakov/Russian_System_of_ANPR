@@ -33,22 +33,8 @@ bool Image::recognize()
 	textLicense.clear();
 
 	std::vector<cv::Rect> faces;
-
-	float imageAspect = (float)mimage.size().width / (float)mimage.size().height;
-	int width, height;
-
-    if (imageAspect > 1.0f)
-	{
-		width = 800;
-		height = 800/imageAspect;
-	}
-	else
-	{
-		width = 800 * imageAspect;
-		height = 800;
-	}
 	
-	cv::Mat gray, smallImg(height, width, CV_8UC1);
+	cv::Mat gray, smallImg(mimage.rows/scale, mimage.cols/scale, CV_8UC1);
 	
 	cv::cvtColor(mimage, gray, CV_BGR2GRAY);
 	cv::resize(gray, smallImg, smallImg.size(), 0, 0, cv::INTER_LINEAR);
@@ -59,15 +45,13 @@ bool Image::recognize()
     cascade.detectMultiScale(smallImg, faces,
 		1.1, 10, 5,
 		cv::Size(70, 21));  
-	
-	cv::resize(mimage, mimage, smallImg.size(), 0, 0, cv::INTER_LINEAR);
 
 	for(auto& r : faces)
 	{
-		cv::Point first = cv::Point(r.x, r.y);
-		cv::Point two	= cv::Point((r.x + r.width), (r.y + r.height));
+		cv::Point first = cv::Point(r.x*scale, r.y*scale);
+		cv::Point two	= cv::Point(r.width*scale, r.height*scale);
 
-		frames.push_back(mimage(cv::Rect(first.x, first.y, two.x-first.x , two.y-first.y)));
+		frames.push_back(mimage(cv::Rect(first.x, first.y, two.x , two.y)));
 	}
 	
 	for(auto& f : frames)
