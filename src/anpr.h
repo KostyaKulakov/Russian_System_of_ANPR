@@ -54,15 +54,13 @@ public:
 	
 private:
 	bool findLetters(cv::Mat& src);
-	//bool recognizeLetters();
 	bool isDuplicat(mArea& a, std::vector<mArea>& vec);
 	
 	const std::string symbolDigit = "0123456789";
 	const std::string symbolChar  = "abekmhopctyxABEKMHOPCTYX";
 	const unsigned thresh         = 160;
-	const float scale             = 1.8;
+	const unsigned scale          = 2;
 	bool cascadeLoad;
-	//bool ocrLoad;
 	bool showWarning;
 
 	cv::Mat sourseImage;

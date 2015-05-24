@@ -7,8 +7,6 @@ LicenseSymbolsArea::LicenseSymbolsArea(cv::Mat& mplate, std::vector<mArea>& mpla
 Anpr::Anpr() 
 {
 	cascadeLoad = cascade.load("haarcascade_russian_plate_number.xml");
-	/*ocrLoad = OCR.Init(NULL, "amh");
-	OCR.SetPageSegMode(tesseract::PSM_SINGLE_CHAR);*/
 }
 
 Anpr::~Anpr()
@@ -40,32 +38,29 @@ bool Anpr::recognize()
 		return false;
 	}
 	
-	/*if(ocrLoad != 0) // ocr init return 0 on success and -1 on initialization failure.
-	{
-		std::cerr << "Tesseract OCR: This library is not able to boot" << std::endl;
-		return false;
-	}*/
-	
-	
 	licensePlate.clear();
 	licenseSymbols.clear();
 	textLicense.clear();
 
 	std::vector<cv::Rect> plate;
 	
-	cv::Mat gray, smallImg(sourseImage.rows/scale, sourseImage.cols/scale, CV_8UC1);
+	cv::Mat gray;
 	
 	cv::cvtColor(sourseImage, gray, CV_BGR2GRAY);
-	cv::resize(gray, smallImg, smallImg.size(), 0, 0, cv::INTER_LINEAR);
+	
+	bool resize = sourseImage.size().width/scale > 480 || sourseImage.size().height/scale > 320;
+	
+	if(resize)
+		cv::resize(gray, gray, cv::Size(sourseImage.size().width/scale, sourseImage.size().height/scale), 0, 0, cv::INTER_LINEAR);
 		
-    cascade.detectMultiScale(smallImg, plate,
+    cascade.detectMultiScale(gray, plate,
 		1.1, 10, 5,
-		cv::Size(70, 21));  
+		cv::Size(70, 21), cv::Size(500, 150));  
 
 	for(auto& p : plate)
 	{
-		cv::Point plateBegin	= cv::Point(p.x*scale, p.y*scale);
-		cv::Point plateEnd		= cv::Point(p.width*scale, p.height*scale);
+		cv::Point plateBegin	= cv::Point(p.x*(resize ? scale : 1), p.y*(resize ? scale : 1));
+		cv::Point plateEnd		= cv::Point(p.width*(resize ? scale : 1), p.height*(resize ? scale : 1));
 
 		licensePlate.push_back(sourseImage(cv::Rect(plateBegin.x, 
 										plateBegin.y,
@@ -75,9 +70,6 @@ bool Anpr::recognize()
 	
 	for(auto& p : licensePlate)
 		findLetters(p);
-	
-	/*if(!licenseSymbols.empty())
-		recognizeLetters();*/
 	
 	return true;
 }
@@ -203,54 +195,6 @@ bool Anpr::findLetters(cv::Mat& src)
 	
 	return isRealSymbolLicens;
 }
-/*
-bool Anpr::recognizeLetters()
-{	
-	for(auto& l : licenseSymbols)
-	{
-		std::string text;
-		
-		for(size_t i = 0; i < l.plateAreaSymbols.size(); ++i)
-		{
-			int minX	= l.plateAreaSymbols.at(i).minX;
-			int minY	= l.plateAreaSymbols.at(i).minY;
-			int height	= l.plateAreaSymbols.at(i).height;
-			int width	= l.plateAreaSymbols.at(i).width;
-			
-			if(minX-1 <= 0 || minY-1 <= 0 || (minX-1 + width+3) >= l.plate.size().width || (minY-1 + height+3) >= l.plate.size().height)
-				continue;
-			
- 			cv::Mat subImg = (l.plate)(cv::Rect(minX-1, minY-1, width+3, height+3));
-			
-			cv::Mat gray = cvCreateImage(subImg.size(), 8, 1);            
-			cv::Mat image = cvCreateImage(subImg.size(), 8, 1);
-			cv::cvtColor(subImg, gray, CV_RGB2GRAY);
-			
-			if(i == 0 || i == 4 || i == 5)
-				cv::resize(image, image, cv::Size(10, 18));
-			else
-				cv::resize(image, image, cv::Size(15, 24));
-
-			cv::GaussianBlur(image, image, cv::Size(7, 7), 0);
-			cv::threshold(gray, image, 0, 255, cv::THRESH_BINARY_INV | cv::THRESH_OTSU);
-	
-			OCR.SetVariable("tessedit_char_whitelist", ((i == 0 || i == 4 || i == 5) ? symbolChar.c_str() : symbolDigit.c_str()));
-			
-			OCR.TesseractRect(image.data, 1, image.step1(), 0, 0, image.cols, image.rows);                  
-			
-			char* symbol = OCR.GetUTF8Text();
-			
-			if(symbol[0] == ' ')
-				symbol[0] = '?';
-			
-			text.push_back(symbol[0]);
-		}
-		
-		textLicense.push_back(text);
-	}
-	
-	return true;
-}*/
 
 bool Anpr::isDuplicat(mArea& a, std::vector<mArea>& vec)
 {
