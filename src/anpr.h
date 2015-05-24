@@ -1,9 +1,9 @@
 /*
-* Name: image.h
-* Description: This class contains a set of methods for ANPR
+* Name: anpr.h
+* Description: This class implements the basic methods for Recognition license plate
 * Author: Konstantin Kulakov
 * Website: http://kostyakulakov.ru
-* Version: 1.0
+* Version: 1.1
 * License: BSD
 */
 
@@ -17,54 +17,58 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/objdetect/objdetect.hpp>
 #include "area.h"
+#include <algorithm>
+#include <iostream>
 #include <string>
 #include <vector>
 #include <math.h>
 
 struct LicenseSymbolsArea
 {
-	LicenseSymbolsArea(cv::Mat& mframe, std::vector<mArea>& mframeAreaSymbols);
+	LicenseSymbolsArea(cv::Mat& mplate, std::vector<mArea>& mplateAreaSymbols);
 	
-	cv::Mat frame;
-	std::vector<mArea> frameAreaSymbols;
+	cv::Mat plate;
+	std::vector<mArea> plateAreaSymbols;
 };
 
-class Image
+class Anpr
 {
 public:
-	Image();
-	~Image();
+	Anpr();
+	~Anpr();
 	
 	bool recognize();
 	bool recognize(const cv::Mat& img);
 	
 	std::vector<std::string> getLicenseText() const;
-	std::vector<cv::Mat>     getFrames()      const;
+	std::vector<cv::Mat>     getLicensePlate()      const;
 	
 	void setImage(const cv::Mat& img);
+	void setShowWarning(const bool mshowWarning);
 	
-	void saveFrames();
-	void saveSymbols();
+	void saveLicensePlate();
 	
 	void showNormalImage(std::string namewindow);
-	void showSymbol();
+	void showLicensePlate();
 	void showimage(std::string namewindow, cv::Mat image);
 	
 private:
-	bool recognizeSymbols(cv::Mat& src);
-	bool recognizeLicenseNumber();
+	bool findLetters(cv::Mat& src);
+	bool recognizeLetters();
 	bool isDuplicat(mArea& a, std::vector<mArea>& vec);
 	
 	const std::string symbolDigit = "0123456789";
 	const std::string symbolChar  = "abekmhopctyxABEKMHOPCTYX";
 	const unsigned thresh         = 160;
 	const float scale             = 1.8;
-	bool  iscascadeLoad;
+	bool cascadeLoad;
+	bool ocrLoad;
+	bool showWarning;
 
-	cv::Mat mimage;
+	cv::Mat sourseImage;
 	std::vector<LicenseSymbolsArea> licenseSymbols;
 	std::vector<std::string>		textLicense;
-	std::vector<cv::Mat> frames;
-	tesseract::TessBaseAPI OCR;
-	cv::CascadeClassifier cascade;
+	std::vector<cv::Mat>			licensePlate;
+	tesseract::TessBaseAPI			OCR;
+	cv::CascadeClassifier			cascade;
 };

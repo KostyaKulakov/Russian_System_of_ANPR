@@ -3,7 +3,7 @@
 * Description: This class contains a structure for storing location symbols
 * Author: Konstantin Kulakov
 * Website: http://kostyakulakov.ru
-* Version: 1.0
+* Version: 1.1
 * License: BSD
 */
 
@@ -13,7 +13,7 @@
 
 struct mArea
 {
-	mArea(std::vector<cv::Point>& v);
+	mArea(std::vector<cv::Point>& vec);
 	unsigned minX;
 	unsigned maxX;
 	unsigned minY;

@@ -1,23 +1,23 @@
 #include "area.h"
 
-mArea::mArea(std::vector<cv::Point>& v)
+mArea::mArea(std::vector<cv::Point>& vec)
 {
-	minX = v.at(0).x;
-	maxX = v.at(0).x;
-	minY = v.at(0).y;
-	maxY = v.at(0).y;
+	minX = vec.at(0).x;
+	maxX = vec.at(0).x;
+	minY = vec.at(0).y;
+	maxY = vec.at(0).y;
 
-	for(size_t z = 0; z < v.size(); ++z)
+	for(auto& v : vec)
 	{
-		if(v.at(z).x < minX)
-			minX = v.at(z).x;
-		else if(v.at(z).x > maxX)
-			maxX = v.at(z).x;
+		if(v.x < minX)
+			minX = v.x;
+		else if(v.x > maxX)
+			maxX = v.x;
 
-		if(v.at(z).y < minY)
-			minY = v.at(z).y;
-		else if(v.at(z).y > maxY)
-			maxY = v.at(z).y;
+		if(v.y < minY)
+			minY = v.y;
+		else if(v.y > maxY)
+			maxY = v.y;
 	}
 
 	height = maxY - minY;
