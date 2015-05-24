@@ -7,8 +7,8 @@ LicenseSymbolsArea::LicenseSymbolsArea(cv::Mat& mplate, std::vector<mArea>& mpla
 Anpr::Anpr() 
 {
 	cascadeLoad = cascade.load("haarcascade_russian_plate_number.xml");
-	ocrLoad = OCR.Init(NULL, "amh");
-	OCR.SetPageSegMode(tesseract::PSM_SINGLE_CHAR);
+	/*ocrLoad = OCR.Init(NULL, "amh");
+	OCR.SetPageSegMode(tesseract::PSM_SINGLE_CHAR);*/
 }
 
 Anpr::~Anpr()
@@ -40,11 +40,11 @@ bool Anpr::recognize()
 		return false;
 	}
 	
-	if(ocrLoad != 0) // ocr init return 0 on success and -1 on initialization failure.
+	/*if(ocrLoad != 0) // ocr init return 0 on success and -1 on initialization failure.
 	{
 		std::cerr << "Tesseract OCR: This library is not able to boot" << std::endl;
 		return false;
-	}
+	}*/
 	
 	
 	licensePlate.clear();
@@ -76,8 +76,8 @@ bool Anpr::recognize()
 	for(auto& p : licensePlate)
 		findLetters(p);
 	
-	if(!licenseSymbols.empty())
-		recognizeLetters();
+	/*if(!licenseSymbols.empty())
+		recognizeLetters();*/
 	
 	return true;
 }
@@ -203,7 +203,7 @@ bool Anpr::findLetters(cv::Mat& src)
 	
 	return isRealSymbolLicens;
 }
-
+/*
 bool Anpr::recognizeLetters()
 {	
 	for(auto& l : licenseSymbols)
@@ -250,7 +250,7 @@ bool Anpr::recognizeLetters()
 	}
 	
 	return true;
-}
+}*/
 
 bool Anpr::isDuplicat(mArea& a, std::vector<mArea>& vec)
 {

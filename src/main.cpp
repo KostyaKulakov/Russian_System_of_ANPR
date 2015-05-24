@@ -20,8 +20,8 @@ int main(int argc, char** argv)
 	image.saveLicensePlate();
 	image.showLicensePlate();
 	
-	for(auto& x : image.getLicenseText())
-		std::cout << x << std::endl;
+	/*for(auto& x : image.getLicenseText())
+		std::cout << x << std::endl;*/
 	
 	cv::waitKey(0);
 
