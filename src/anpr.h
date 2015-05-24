@@ -55,7 +55,7 @@ public:
 private:
 	bool findLetters(cv::Mat& src);
 	bool isDuplicat(mArea& a, std::vector<mArea>& vec);
-	std::pair<unsigned, unsigned> getLowerBoundary(cv::Mat plate);
+	std::pair<unsigned, unsigned> getBoundary(cv::Mat plate);
 	
 	const std::string symbolDigit = "0123456789";
 	const std::string symbolChar  = "abekmhopctyxABEKMHOPCTYX";
