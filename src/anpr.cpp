@@ -157,6 +157,12 @@ bool Anpr::findLetters(cv::Mat& src)
 	std::vector<cv::Vec4i> hierarchy;
 	cv::Mat cannyOutput, srcGray;
 	
+	auto bound = getLowerBoundary(src);
+	imshow("After", src);
+
+	src = src(cv::Rect(0, bound.second, src.size().width, bound.first-bound.second));
+
+	
 	// Convert image to gray and blur it
 	cvtColor(src, srcGray, cv::COLOR_BGR2GRAY);
 	cv::blur(srcGray, srcGray, cv::Size(3,3));
@@ -194,6 +200,43 @@ bool Anpr::findLetters(cv::Mat& src)
 			std::cerr << "Do not found a sufficient number of characters" << std::endl;
 	
 	return isRealSymbolLicens;
+}
+
+std::pair<unsigned, unsigned> Anpr::getLowerBoundary(cv::Mat plate)
+{
+	cv::cvtColor(plate, plate, CV_BGR2GRAY);
+	threshold(plate, plate, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
+	size_t height = plate.size().height;
+	unsigned lastCount = 0;
+	cv::Mat data;
+	
+	unsigned lowerBound = 0;
+	for(unsigned i = height/2; i < height && lowerBound == 0; ++i)
+	{
+		data = plate.row(i);
+		unsigned count = cv::countNonZero(data);
+		
+		if(count < lastCount/2)
+			lowerBound = i;
+
+		lastCount = count;
+	}
+	
+	lastCount = 0;
+	
+	unsigned upperBound = 0;
+	for(unsigned i = height/2; i > 0 && upperBound == 0; --i)
+	{
+		data = plate.row(i);
+		unsigned count = cv::countNonZero(data);
+		
+		if(count*2 < lastCount)
+			upperBound = i+1;
+
+		lastCount = count;
+	}
+	
+	return std::pair<unsigned, unsigned>(lowerBound, upperBound);
 }
 
 bool Anpr::isDuplicat(mArea& a, std::vector<mArea>& vec)
