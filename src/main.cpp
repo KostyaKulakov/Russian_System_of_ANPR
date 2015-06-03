@@ -17,8 +17,8 @@ int main(int argc, char** argv)
 	cv::Mat img = cv::imread((argc >= 2 ? argv[1] : "test.jpg"), 1);
 	
 	image.recognize(img);
-	image.saveLicensePlate();
-	image.showLicensePlate();
+	image.saveLicensePlates();
+	image.showLicensePlates();
 	
 	/*for(auto& x : image.getLicenseText())
 		std::cout << x << std::endl;*/

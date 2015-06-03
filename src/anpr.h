@@ -41,33 +41,39 @@ public:
 	bool recognize(const cv::Mat& img);
 	
 	std::vector<std::string> getLicenseText() const;
-	std::vector<cv::Mat>     getLicensePlate()      const;
+	std::vector<cv::Mat>     getLicensePlates() const;
 	
 	void setImage(const cv::Mat& img);
 	void setShowWarning(const bool mshowWarning);
 	
-	void saveLicensePlate();
+	void saveLicensePlates();
 	
 	void showNormalImage(std::string namewindow);
-	void showLicensePlate();
+	void showLicensePlates();
 	void showimage(std::string namewindow, cv::Mat image);
 	
 private:
 	bool findLetters(cv::Mat& src);
 	bool isDuplicat(mArea& a, std::vector<mArea>& vec);
-	std::pair<unsigned, unsigned> getBoundary(cv::Mat plate);
+	double getAngle(cv::Mat& plate);
+	void rotateImage(cv::Mat& image, const double angle);
+	unsigned getBottomBound(cv::Mat plate); //!
+	unsigned getTopBound(cv::Mat plate); //!
 	
 	const std::string symbolDigit = "0123456789";
 	const std::string symbolChar  = "abekmhopctyxABEKMHOPCTYX";
 	const unsigned thresh         = 160;
 	const unsigned scale          = 2;
-	bool cascadeLoad;
+	const double minDegree = -5;
+	const double maxDegree = 5;
+	const double stepDegree= 0.1;
+	bool cascadePlateLoad, cascadeSymbolLoad;
 	bool showWarning;
 
 	cv::Mat sourseImage;
 	std::vector<LicenseSymbolsArea> licenseSymbols;
 	std::vector<std::string>		textLicense;
-	std::vector<cv::Mat>			licensePlate;
+	std::vector<cv::Mat>			licensePlates;
 	tesseract::TessBaseAPI			OCR;
-	cv::CascadeClassifier			cascade;
+	cv::CascadeClassifier			cascadePlate, cascadeSymbol;
 };
