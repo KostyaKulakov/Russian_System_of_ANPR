@@ -54,11 +54,14 @@ public:
 	
 private:
 	bool findLetters(cv::Mat& src);
-	bool isDuplicat(mArea& a, std::vector<mArea>& vec);
 	double getAngle(cv::Mat& plate);
 	void rotateImage(cv::Mat& image, const double angle);
 	unsigned getBottomBound(cv::Mat plate); //!
 	unsigned getTopBound(cv::Mat plate); //!
+	unsigned getRightBound(cv::Mat plate, bool iswhite);
+	unsigned getLeftBound(cv::Mat plate, bool iswhite);
+	bool recognizeLetters();
+	bool isDuplicat(mArea& a, std::vector<mArea>& vec);
 	
 	const std::string symbolDigit = "0123456789";
 	const std::string symbolChar  = "abekmhopctyxABEKMHOPCTYX";

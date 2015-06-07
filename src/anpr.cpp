@@ -8,6 +8,8 @@ Anpr::Anpr()
 {
 	cascadePlateLoad = cascadePlate.load("haarcascade_russian_plate_number.xml");
 	cascadeSymbolLoad = cascadeSymbol.load("haarcascade_russian_plate_number_symbol.xml");
+	/*OCR.Init(NULL, "amh");
+	OCR.SetPageSegMode(tesseract::PSM_SINGLE_CHAR);*/
 }
 
 Anpr::~Anpr()
@@ -71,7 +73,10 @@ bool Anpr::recognize()
 	
 	for(auto& p : licensePlates)
 		findLetters(p);
-	
+		
+	if(!licenseSymbols.empty())
+		recognizeLetters();
+		
 	return true;
 }
 
@@ -163,20 +168,26 @@ bool Anpr::findLetters(cv::Mat& src)
 
 	unsigned bottomBound = getBottomBound(src);
 	unsigned topBound	 = getTopBound(src);
-	
 	src = src(cv::Rect(0, topBound, src.size().width, bottomBound-topBound));
+
+	unsigned leftBound	 = std::max(getLeftBound(src, true), getLeftBound(src, false));
+	unsigned rightBound	 = std::min(getRightBound(src, true), getRightBound(src, false));
+	src = src(cv::Rect(leftBound, 0, rightBound-leftBound, src.size().height));
 	
+	std::cout << "Left: " << leftBound << " Right: " << rightBound << std::endl;
+	cv::imshow("Image", src);
 	cvtColor(src, srcGray, cv::COLOR_BGR2GRAY);
 
 	threshold(srcGray, srcGray, 0, 255, CV_THRESH_BINARY  | CV_THRESH_OTSU);
+	
 	std::cout << "Size width: " << srcGray.size().width << " Height: " << srcGray.size().height << std::endl;
-	// Convert image to gray and blur it
+	
 	cv::blur(srcGray, srcGray, cv::Size(3,3));
-	// Detect edges using canny
+	
 	cv::Canny(srcGray, cannyOutput, 100, 300, 3);
 
 	// Find contours
-	cv::findContours(cannyOutput, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+	cv::findContours(cannyOutput, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
 
 	for(auto& c : contours)
 	{
@@ -191,32 +202,25 @@ bool Anpr::findLetters(cv::Mat& src)
 		area.width > srcGray.size().width * 0.15 ||
 		area.width > area.height ||
 		area.minX < area.width * 0.03 ||
-		(area.minX + area.width) > srcGray.size().width * 0.97)
+		(area.minX + area.width) > srcGray.size().width * 0.97 ||
+		isDuplicat(area, contursOut))
 			continue;
 		
 		unsigned nz = cv::countNonZero(((srcGray)(cv::Rect(area.minX, area.minY, area.width, area.height))));
 		auto ratio = (double(nz) * 100)/(area.width * area.height);
 		
-		if(ratio < 30)
+		if(100.0-ratio < 15)
 			continue;
 		
-		std::cout << "Height: " << area.height << " width: " << area.width << " NZ: " << nz << " Ratio: " << ratio << "%" << " Min x: " << area.minX << " Width: " << area.width << std::endl;
+		std::cout << "Height: " << area.height << " width: " << area.width << " NZ: " << nz << " Ratio: " << 100.0-ratio << "%" << " Min x: " << area.minX << " Width: " << area.width << std::endl;
 		
 		contursOut.push_back(area);
 	}
 
-	bool isRealSymbolLicens = (contursOut.size() == 8 || contursOut.size() == 9);
+	std::sort(contursOut.begin(), contursOut.end());	// Set the symbols in the correct order
+	licenseSymbols.push_back(LicenseSymbolsArea(src, contursOut));
 	
-	if(isRealSymbolLicens || true)
-	{
-		std::sort(contursOut.begin(), contursOut.end());	// Set the symbols in the correct order
-		licenseSymbols.push_back(LicenseSymbolsArea(src, contursOut));
-	}
-	else
-		if(showWarning)
-			std::cerr << "Do not found a sufficient number of characters" << std::endl;
-	
-	return isRealSymbolLicens;
+	return !licenseSymbols.empty();
 }
 
 double Anpr::getAngle(cv::Mat& plate) // Optimized
@@ -299,6 +303,106 @@ unsigned Anpr::getTopBound(cv::Mat plate)
 	return symbols.empty() ? 0 : symbols.at(0).y;
 }
 
+unsigned Anpr::getLeftBound(cv::Mat plate, bool iswhite)
+{
+	cv::cvtColor(plate, plate, CV_BGR2GRAY);
+	threshold(plate, plate, 0, 255, CV_THRESH_BINARY  | CV_THRESH_OTSU);
+	
+	cv::Mat element = getStructuringElement(cv::MORPH_RECT,
+                                       cv::Size( 2*1 + 1, 2*1+1 ),
+                                       cv::Point( 1, 1) );
+	cv::erode(plate, plate, element);
+	cv::dilate(plate, plate, element);
+
+	size_t width = plate.size().width;
+	double height= plate.size().height;
+
+	cv::Mat data;
+
+	for(unsigned i = 2; i < width/2; ++i)
+	{
+		data = plate.col(i);
+		unsigned count = cv::countNonZero(data);
+		
+		if((!iswhite && count > height*0.75) || (iswhite && count < height*0.60))
+			return i;
+	}
+	
+	return 0;
+}
+
+unsigned Anpr::getRightBound(cv::Mat plate, bool iswhite)
+{
+	cv::cvtColor(plate, plate, CV_BGR2GRAY);
+	threshold(plate, plate, 0, 255, CV_THRESH_BINARY  | CV_THRESH_OTSU);
+
+	cv::Mat element = getStructuringElement(cv::MORPH_RECT,
+                                       cv::Size( 2*1 + 1, 2*1+1 ),
+                                       cv::Point( 1, 1) );
+	cv::erode(plate, plate, element);
+	cv::dilate(plate, plate, element);
+
+	size_t width = plate.size().width;
+	double height= plate.size().height;
+
+	cv::Mat data;
+	
+	for(unsigned i = width-2; i > width/2; --i)
+	{
+		data = plate.col(i);
+		unsigned count = cv::countNonZero(data);
+		
+		if((!iswhite && count > height*0.75) || (iswhite && count < height*0.60))
+			return i+1;
+	}
+	
+	return width;
+}
+
+bool Anpr::recognizeLetters()
+{	
+	/*for(auto& l : licenseSymbols)
+	{
+		std::string text;
+		
+		for(size_t i = 0; i < l.plateAreaSymbols.size(); ++i)
+		{
+			int minX	= l.plateAreaSymbols.at(i).minX;
+			int minY	= l.plateAreaSymbols.at(i).minY;
+			int height	= l.plateAreaSymbols.at(i).height;
+			int width	= l.plateAreaSymbols.at(i).width;
+			
+ 			cv::Mat subImg = (l.plate)(cv::Rect(minX, minY, width, height));
+			
+			cv::Mat gray = cvCreateImage(subImg.size(), 8, 1);            
+			cv::Mat image = cvCreateImage(subImg.size(), 8, 1);
+			cv::cvtColor(subImg, gray, CV_RGB2GRAY);
+			
+			if(i == 0 || i == 4 || i == 5)
+				cv::resize(image, image, cv::Size(10, 18));
+			else
+				cv::resize(image, image, cv::Size(15, 24));
+
+			cv::GaussianBlur(image, image, cv::Size(7, 7), 0);
+			cv::threshold(gray, image, 0, 255, cv::THRESH_BINARY_INV | cv::THRESH_OTSU);
+	
+			OCR.SetVariable("tessedit_char_whitelist", ((i == 0 || i == 4 || i == 5) ? symbolChar.c_str() : symbolDigit.c_str()));
+			
+			OCR.TesseractRect(image.data, 1, image.step1(), 0, 0, image.cols, image.rows);                  
+			
+			char* symbol = OCR.GetUTF8Text();
+			
+			if(isspace(symbol[0]))
+				symbol[0] = '?';
+			
+			text.push_back(symbol[0]);
+		}
+		
+		textLicense.push_back(text);
+	}
+	*/
+	return true;
+}
 bool Anpr::isDuplicat(mArea& a, std::vector<mArea>& vec)
 {
 	for(auto& v : vec)
