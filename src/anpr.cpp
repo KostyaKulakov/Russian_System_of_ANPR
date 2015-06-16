@@ -232,12 +232,12 @@ double Anpr::getAngle(cv::Mat& plate) // Optimized
 {
 	unsigned min = plate.size().height;
 	double angle = 0;
-	cv::Mat temp = plate.clone();
-	rotateImage(temp, minDegree-stepDegree);
-	
+	cv::Mat temp;
+
 	for(double a = minDegree; a < maxDegree; a += stepDegree) //a - angle 
 	{
-		rotateImage(temp, stepDegree);
+		temp = plate.clone();
+		rotateImage(temp, a);
 
 		unsigned bottomBound = getBottomBound(temp);
 		if(bottomBound < min)
@@ -247,7 +247,7 @@ double Anpr::getAngle(cv::Mat& plate) // Optimized
 		}
 	}
 
-   return angle; 
+	return angle; 
 }
 
 void Anpr::rotateImage(cv::Mat& image, const double angle)
