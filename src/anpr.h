@@ -56,8 +56,9 @@ private:
 	bool findLetters(cv::Mat& src);
 	double getAngle(cv::Mat& plate);
 	void rotateImage(cv::Mat& image, const double angle);
-	unsigned getBottomBound(cv::Mat plate); //!
-	unsigned getTopBound(cv::Mat plate); //!
+	unsigned getBottomBound(cv::Mat& plate);
+	unsigned getTopBound(cv::Mat& plate);
+	unsigned getHistTopBound(cv::Mat& plate);
 	unsigned getRightBound(cv::Mat plate, bool iswhite);
 	unsigned getLeftBound(cv::Mat plate, bool iswhite);
 	bool recognizeLetters();
@@ -67,8 +68,8 @@ private:
 	const std::string symbolChar  = "abekmhopctyxABEKMHOPCTYX";
 	const unsigned thresh         = 160;
 	const unsigned scale          = 2;
-	const double minDegree = -5;
-	const double maxDegree = 5;
+	const double minDegree = -10;
+	const double maxDegree = 10;
 	const double stepDegree= 0.1;
 	bool cascadePlateLoad, cascadeSymbolLoad;
 	bool showWarning;

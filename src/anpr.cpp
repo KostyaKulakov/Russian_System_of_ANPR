@@ -161,29 +161,34 @@ bool Anpr::findLetters(cv::Mat& src)
 	std::vector<std::vector<cv::Point> > contours;
 	std::vector<mArea> contursOut;
 	std::vector<cv::Vec4i> hierarchy;
-	cv::Mat cannyOutput, srcGray;
+	cv::Mat cannyOutput, srcGray, srcThreshold;
 	
-	imshow("Before", src);
-	rotateImage(src, getAngle(src));
+	cvtColor(src, srcGray, cv::COLOR_BGR2GRAY);
+	threshold(srcGray, srcThreshold, 0, 255, CV_THRESH_BINARY  | CV_THRESH_OTSU);
+	medianBlur(srcThreshold, srcThreshold, 5);
+	
+	imshow("Before", srcThreshold);
+	double angle = getAngle(srcThreshold);
+	rotateImage(srcThreshold, angle);
 
-	unsigned bottomBound = getBottomBound(src);
-	unsigned topBound	 = getTopBound(src);
-	src = src(cv::Rect(0, topBound, src.size().width, bottomBound-topBound));
-
-	unsigned leftBound	 = std::max(getLeftBound(src, true), getLeftBound(src, false));
-	unsigned rightBound	 = std::min(getRightBound(src, true), getRightBound(src, false));
-	src = src(cv::Rect(leftBound, 0, rightBound-leftBound, src.size().height));
+	unsigned bottomBound = getBottomBound(srcThreshold);
+	unsigned topBound	 = getTopBound(srcThreshold);
+	srcThreshold = srcThreshold(cv::Rect(0, topBound, srcThreshold.size().width, bottomBound-topBound));
+	unsigned leftBound	 = std::max(getLeftBound(srcThreshold, true), getLeftBound(srcThreshold, false));
+	unsigned rightBound	 = std::min(getRightBound(srcThreshold, true), getRightBound(srcThreshold, false));
+	
+	rotateImage(src, angle);
+	src = src(cv::Rect(leftBound, topBound, rightBound-leftBound, bottomBound-topBound));
 	
 	std::cout << "Left: " << leftBound << " Right: " << rightBound << std::endl;
-	cv::imshow("Image", src);
+	cv::imshow("Thresold", srcThreshold);
+	cv::imshow("Src", src);
+	std::cout << "Size width: " << src.size().width << " Height: " << src.size().height << std::endl;
+	
 	cvtColor(src, srcGray, cv::COLOR_BGR2GRAY);
-
 	threshold(srcGray, srcGray, 0, 255, CV_THRESH_BINARY  | CV_THRESH_OTSU);
-	
-	std::cout << "Size width: " << srcGray.size().width << " Height: " << srcGray.size().height << std::endl;
-	
+	medianBlur(srcThreshold, srcThreshold, 3);
 	cv::blur(srcGray, srcGray, cv::Size(3,3));
-	
 	cv::Canny(srcGray, cannyOutput, 100, 300, 3);
 
 	// Find contours
@@ -209,7 +214,7 @@ bool Anpr::findLetters(cv::Mat& src)
 		unsigned nz = cv::countNonZero(((srcGray)(cv::Rect(area.minX, area.minY, area.width, area.height))));
 		auto ratio = (double(nz) * 100)/(area.width * area.height);
 		
-		if(100.0-ratio < 15)
+		if(100.0-ratio < 15) // содержание чёрного в номере
 			continue;
 		
 		std::cout << "Height: " << area.height << " width: " << area.width << " NZ: " << nz << " Ratio: " << 100.0-ratio << "%" << " Min x: " << area.minX << " Width: " << area.width << std::endl;
@@ -227,12 +232,12 @@ double Anpr::getAngle(cv::Mat& plate) // Optimized
 {
 	unsigned min = plate.size().height;
 	double angle = 0;
-	cv::Mat temp;
-
+	cv::Mat temp = plate.clone();
+	rotateImage(temp, minDegree-stepDegree);
+	
 	for(double a = minDegree; a < maxDegree; a += stepDegree) //a - angle 
 	{
-		temp = plate.clone();
-		rotateImage(temp, a);
+		rotateImage(temp, stepDegree);
 
 		unsigned bottomBound = getBottomBound(temp);
 		if(bottomBound < min)
@@ -257,12 +262,10 @@ void Anpr::rotateImage(cv::Mat& image, const double angle)
 	warpAffine(image, image, rot_mat, image.size());	
 }
 	
-unsigned Anpr::getBottomBound(cv::Mat plate)
+unsigned Anpr::getBottomBound(cv::Mat& plate)
 {
-	cv::cvtColor(plate, plate, CV_BGR2GRAY);
-	equalizeHist(plate, plate);
-	//threshold(plate, plate, 120, 255, cv::THRESH_BINARY);
-	threshold(plate, plate, 0, 255, CV_THRESH_BINARY  | CV_THRESH_OTSU);
+	//equalizeHist(plate, plate);
+
 	size_t height = plate.size().height;
 	unsigned lastCount = 0;
 	cv::Mat data;
@@ -281,10 +284,26 @@ unsigned Anpr::getBottomBound(cv::Mat plate)
 	return height;
 }
 
-unsigned Anpr::getTopBound(cv::Mat plate)
+unsigned Anpr::getHistTopBound(cv::Mat& plate)
 {
-	cv::cvtColor(plate, plate, CV_BGR2GRAY);
-	equalizeHist(plate, plate);
+	size_t height = plate.size().height;
+	cv::Mat data;
+	
+	for(unsigned i = 0; i < height/2; ++i)
+	{
+		data = plate.row(i);
+		unsigned count = cv::countNonZero(data);
+		
+		if(count > height*0.5)
+			return i;
+	}
+	
+	return 0;
+}
+
+unsigned Anpr::getTopBound(cv::Mat& plate)
+{
+	//equalizeHist(plate, plate);
 	std::vector<cv::Rect> symbols;
 	
 	cascadeSymbol.detectMultiScale(plate, symbols);
@@ -298,16 +317,12 @@ unsigned Anpr::getTopBound(cv::Mat plate)
 	
 	for(auto& s : symbols)
 		std::cout << s.y << std::endl;
-	
 
-	return symbols.empty() ? 0 : symbols.at(0).y;
+	return symbols.empty() ? getHistTopBound(plate) : symbols.at(0).y;
 }
 
 unsigned Anpr::getLeftBound(cv::Mat plate, bool iswhite)
 {
-	cv::cvtColor(plate, plate, CV_BGR2GRAY);
-	threshold(plate, plate, 0, 255, CV_THRESH_BINARY  | CV_THRESH_OTSU);
-	
 	cv::Mat element = getStructuringElement(cv::MORPH_RECT,
                                        cv::Size( 2*1 + 1, 2*1+1 ),
                                        cv::Point( 1, 1) );
@@ -324,7 +339,7 @@ unsigned Anpr::getLeftBound(cv::Mat plate, bool iswhite)
 		data = plate.col(i);
 		unsigned count = cv::countNonZero(data);
 		
-		if((!iswhite && count > height*0.75) || (iswhite && count < height*0.60))
+		if((!iswhite && count > height*0.5) || (iswhite && count < height*0.60))
 			return i;
 	}
 	
@@ -333,9 +348,6 @@ unsigned Anpr::getLeftBound(cv::Mat plate, bool iswhite)
 
 unsigned Anpr::getRightBound(cv::Mat plate, bool iswhite)
 {
-	cv::cvtColor(plate, plate, CV_BGR2GRAY);
-	threshold(plate, plate, 0, 255, CV_THRESH_BINARY  | CV_THRESH_OTSU);
-
 	cv::Mat element = getStructuringElement(cv::MORPH_RECT,
                                        cv::Size( 2*1 + 1, 2*1+1 ),
                                        cv::Point( 1, 1) );
@@ -352,7 +364,7 @@ unsigned Anpr::getRightBound(cv::Mat plate, bool iswhite)
 		data = plate.col(i);
 		unsigned count = cv::countNonZero(data);
 		
-		if((!iswhite && count > height*0.75) || (iswhite && count < height*0.60))
+		if((!iswhite && count > height*0.5) || (iswhite && count < height*0.60))
 			return i+1;
 	}
 	
