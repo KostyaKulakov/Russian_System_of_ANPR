@@ -14,10 +14,10 @@
 struct mArea
 {
 	mArea(std::vector<cv::Point>& vec);
-	unsigned minX;
-	unsigned maxX;
-	unsigned minY;
-	unsigned maxY;
+	
+	cv::Point min;
+	cv::Point max;
+	
 	unsigned height;
 	unsigned width;
 	

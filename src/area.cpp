@@ -2,34 +2,32 @@
 
 mArea::mArea(std::vector<cv::Point>& vec)
 {
-	minX = vec.at(0).x;
-	maxX = vec.at(0).x;
-	minY = vec.at(0).y;
-	maxY = vec.at(0).y;
+	min = vec.at(0);
+	max = vec.at(0);
 
 	for(auto& v : vec)
 	{
-		if(v.x < minX)
-			minX = v.x;
-		else if(v.x > maxX)
-			maxX = v.x;
+		if(v.x < min.x)
+			min.x = v.x;
+		else if(v.x > max.x)
+			max.x = v.x;
 
-		if(v.y < minY)
-			minY = v.y;
-		else if(v.y > maxY)
-			maxY = v.y;
+		if(v.y < min.y)
+			min.y = v.y;
+		else if(v.y > max.y)
+			max.y = v.y;
 	}
 
-	height = maxY - minY;
-	width  = maxX - minX;
+	height = max.y - min.y;
+	width  = max.x - min.x;
 }
 
 bool mArea::operator < (const mArea& a) const
 {
-	return (this->minX < a.minX);
+	return (this->min.x < a.min.y);
 }
 
 bool mArea::operator == (const mArea& a) const
 {
-	return ((this->minX >= a.minX && this->minX <= a.maxX) || (this->maxX <= a.maxX && this->maxX >= a.maxX));
+	return ((this->min.x >= a.min.x && this->min.x <= a.max.x) || (this->max.x <= a.max.x && this->max.x >= a.max.x));
 }

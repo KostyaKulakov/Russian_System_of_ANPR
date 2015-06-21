@@ -1,7 +1,7 @@
-#include "Anpr.h"
+#include "anpr.h"
 
-LicenseSymbolsArea::LicenseSymbolsArea(cv::Mat& mplate, std::vector<mArea>& mplateAreaSymbols) :
-	plateAreaSymbols(mplateAreaSymbols), plate(mplate)
+LicenseSymbolsArea::LicenseSymbolsArea(cv::Mat& plate, std::vector<mArea>& plateAreaSymbols) :
+	plate(plate), plateAreaSymbols(plateAreaSymbols)
 {}
 
 Anpr::Anpr() 
@@ -139,10 +139,7 @@ void Anpr::showLicensePlates()
 				continue;
 			
 			for(auto& f : l.plateAreaSymbols)
-				rectangle(img,	cv::Point(f.minX, f.minY),
-								cv::Point(f.maxX, f.maxY),
-								cv::Scalar(0,255,0), 2);
-								
+				rectangle(img,	f.min, f.max, cv::Scalar(0,255,0), 2);				
 		}
 		
 		std::string wndname("License plate " +
@@ -206,18 +203,18 @@ bool Anpr::findLetters(cv::Mat& src)
 		area.width < srcGray.size().width * 0.03 || 
 		area.width > srcGray.size().width * 0.15 ||
 		area.width > area.height ||
-		area.minX < area.width * 0.03 ||
-		(area.minX + area.width) > srcGray.size().width * 0.97 ||
+		area.min.x < area.width * 0.03 ||
+		(area.min.x + area.width) > srcGray.size().width * 0.97 ||
 		isDuplicat(area, contursOut))
 			continue;
 		
-		unsigned nz = cv::countNonZero(((srcGray)(cv::Rect(area.minX, area.minY, area.width, area.height))));
+		unsigned nz = cv::countNonZero(((srcGray)(cv::Rect(area.min.x, area.min.y, area.width, area.height))));
 		auto ratio = (double(nz) * 100)/(area.width * area.height);
 		
 		if(100.0-ratio < 15) // содержание чёрного в номере
 			continue;
 		
-		std::cout << "Height: " << area.height << " width: " << area.width << " NZ: " << nz << " Ratio: " << 100.0-ratio << "%" << " Min x: " << area.minX << " Width: " << area.width << std::endl;
+		std::cout << "Height: " << area.height << " width: " << area.width << " NZ: " << nz << " Ratio: " << 100.0-ratio << "%" << " Min x: " << area.min.x << " Width: " << area.width << std::endl;
 		
 		contursOut.push_back(area);
 	}
@@ -379,12 +376,12 @@ bool Anpr::recognizeLetters()
 		
 		for(size_t i = 0; i < l.plateAreaSymbols.size(); ++i)
 		{
-			int minX	= l.plateAreaSymbols.at(i).minX;
-			int minY	= l.plateAreaSymbols.at(i).minY;
+			int min.x	= l.plateAreaSymbols.at(i).min.x;
+			int min.y	= l.plateAreaSymbols.at(i).min.y;
 			int height	= l.plateAreaSymbols.at(i).height;
 			int width	= l.plateAreaSymbols.at(i).width;
 			
- 			cv::Mat subImg = (l.plate)(cv::Rect(minX, minY, width, height));
+ 			cv::Mat subImg = (l.plate)(cv::Rect(min.x, min.y, width, height));
 			
 			cv::Mat gray = cvCreateImage(subImg.size(), 8, 1);            
 			cv::Mat image = cvCreateImage(subImg.size(), 8, 1);

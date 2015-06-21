@@ -16,16 +16,16 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/objdetect/objdetect.hpp>
-#include "area.h"
 #include <algorithm>
 #include <iostream>
 #include <string>
 #include <vector>
 #include <math.h>
+#include "area.h"
 
 struct LicenseSymbolsArea
 {
-	LicenseSymbolsArea(cv::Mat& mplate, std::vector<mArea>& mplateAreaSymbols);
+	LicenseSymbolsArea(cv::Mat& plate, std::vector<mArea>& plateAreaSymbols);
 	
 	cv::Mat plate;
 	std::vector<mArea> plateAreaSymbols;
