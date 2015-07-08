@@ -64,8 +64,7 @@ private:
 	bool recognizeLetters();
 	bool isDuplicat(mArea& a, std::vector<mArea>& vec);
 	
-	const std::string symbolDigit = "0123456789";
-	const std::string symbolChar  = "abekmhopctyxABEKMHOPCTYX";
+	const std::string accessSymbol = "0123456789abekmhopctyxABEKMHOPCTYX";
 	const unsigned thresh         = 160;
 	const unsigned scale          = 2;
 	const double minDegree = -10;
@@ -73,6 +72,7 @@ private:
 	const double stepDegree= 0.1;
 	bool cascadePlateLoad, cascadeSymbolLoad;
 	bool showWarning;
+	bool showInfo = true;
 
 	cv::Mat sourseImage;
 	std::vector<LicenseSymbolsArea> licenseSymbols;

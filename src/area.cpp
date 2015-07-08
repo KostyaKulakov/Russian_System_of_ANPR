@@ -24,7 +24,7 @@ mArea::mArea(std::vector<cv::Point>& vec)
 
 bool mArea::operator < (const mArea& a) const
 {
-	return (this->min.x < a.min.y);
+	return (this->min.x < a.min.x);
 }
 
 bool mArea::operator == (const mArea& a) const
