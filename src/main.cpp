@@ -1,4 +1,4 @@
-/* Не правильно работает алгоритм выбора буквы не по высоте выборка!!!!
+/*
 * Name: main.cpp
 * Description: General 
 * Author: Konstantin Kulakov

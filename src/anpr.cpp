@@ -167,6 +167,7 @@ bool Anpr::findLetters(cv::Mat& src)
 	
 	imshow("Before", srcThreshold);
 	double angle = getAngle(srcThreshold);
+	std::cout << "Angle: " << angle << std::endl;
 	rotateImage(srcThreshold, angle);
 
 	unsigned bottomBound = getBottomBound(srcThreshold);
@@ -329,7 +330,7 @@ unsigned Anpr::getTopBound(cv::Mat& plate)
 		for(auto& s : symbols)
 			std::cout << s.y << std::endl;
 
-	return symbols.empty() ? getHistTopBound(plate) : symbols.at(0).y;
+	return symbols.empty() ? getHistTopBound(plate) : (*std::max_element(symbols.begin(), symbols.end(), [](const cv::Rect& r1, const cv::Rect& r2){return r1.y > r2.y;})).y;
 }
 
 unsigned Anpr::getLeftBound(cv::Mat plate, bool iswhite)
