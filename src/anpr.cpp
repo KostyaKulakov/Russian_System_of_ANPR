@@ -9,7 +9,7 @@ Anpr::Anpr()
 	cascadePlateLoad = cascadePlate.load("haarcascade_russian_plate_number.xml");
 	cascadeSymbolLoad = cascadeSymbol.load("haarcascade_russian_plate_number_symbol.xml");
 	OCR.Init(NULL, "amh");
-	OCR.SetVariable("tessedit_char_whitelist", accessSymbol.c_str());
+	OCR.SetPageSegMode(tesseract::PSM_SINGLE_CHAR);
 }
 
 Anpr::~Anpr()
@@ -330,7 +330,14 @@ unsigned Anpr::getTopBound(cv::Mat& plate)
 		for(auto& s : symbols)
 			std::cout << s.y << std::endl;
 
-	return symbols.empty() ? getHistTopBound(plate) : (*std::max_element(symbols.begin(), symbols.end(), [](const cv::Rect& r1, const cv::Rect& r2){return r1.y > r2.y;})).y;
+	unsigned averageHeight = 0;
+	for(auto& s : symbols)
+			averageHeight += s.y;
+	
+	if(!symbols.empty()) // is zero
+		averageHeight /= symbols.size();
+	
+	return symbols.empty() ? getHistTopBound(plate) : averageHeight;
 }
 
 unsigned Anpr::getLeftBound(cv::Mat plate, bool iswhite)
@@ -388,17 +395,15 @@ bool Anpr::recognizeLetters()
 
 	for(auto& l : licenseSymbols)
 	{	
-		cv::Mat recimage = cvCreateImage(cv::Size(480, 126), 8, 1);
-		
-		int ti = recimage.size().width*0.1;
-		int tj = recimage.size().height*0.4;
-		
-		for(int i = 0; i < recimage.size().width; ++i)  
-			for(int j=0; j < recimage.size().height; ++j)  
-				recimage.at<unsigned char>(j, i) = 255;
+		std::string text; // change name
 		
 		for(size_t i = 0; i < l.plateAreaSymbols.size(); ++i)
 		{
+			cv::Mat recimage = cvCreateImage(cv::Size(100, 100), 8, 1);
+			for(int i = 0; i < recimage.size().width; ++i)  
+				for(int j=0; j < recimage.size().height; ++j)  
+					recimage.at<unsigned char>(j, i) = 255;
+				
 			int minx	= l.plateAreaSymbols.at(i).min.x;
 			int miny	= l.plateAreaSymbols.at(i).min.y;
 			int height	= l.plateAreaSymbols.at(i).height+l.plateAreaSymbols.at(i).height*0.05;
@@ -413,30 +418,29 @@ bool Anpr::recognizeLetters()
 			
 			for(int i = 0; i < gray.size().width; ++i)  
 				for(int j=0; j < gray.size().height; ++j)  
-					recimage.at<unsigned char>(tj+j, ti+i) = (gray.at<unsigned char>(j, i) == 255 ? 0 : 255);
-					
-			ti += recimage.size().width*0.1;
+					recimage.at<unsigned char>(40+j, 40+i) = (gray.at<unsigned char>(j, i) == 255 ? 0 : 255);
+			
+			equalizeHist(recimage, recimage);
+			unsigned level = 5;
+			cv::GaussianBlur(recimage, recimage, cv::Size(level, level), 0);
+			OCR.SetVariable("tessedit_char_whitelist", ((i == 0 || i == 4 || i == 5) ? symbolChar.c_str() : symbolDigit.c_str()));
+			OCR.TesseractRect(recimage.data, 1, recimage.step1(), 0, 0, recimage.cols, recimage.rows);
+			char* symbol = OCR.GetUTF8Text();
+			
+			while(symbol[0] == ' ')
+			{
+				while((level * level) % 2 == 0)
+					++level;
+				cv::GaussianBlur(recimage, recimage, cv::Size(level, level), 0);
+				OCR.TesseractRect(recimage.data, 1, recimage.step1(), 0, 0, recimage.cols, recimage.rows);
+				symbol = OCR.GetUTF8Text();
+				++level;
+			}
+			
+			text.push_back(symbol[0]);	
 		}
 		
-		equalizeHist(recimage, recimage);
-		cv::GaussianBlur(recimage, recimage, cv::Size(5, 5), 0);
-		
-		if(showInfo)
-		{
-			imshow("0 rec", recimage);
-			imshow("rec", recimage);
-			imwrite("ocr.jpg", recimage);
-		}
-		
-		OCR.TesseractRect(recimage.data, 1, recimage.step1(), 0, 0, recimage.cols, recimage.rows);
-		
-		std::string result = OCR.GetUTF8Text();
-		
-		/*for(size_t i = 0; i < result.size(); ++i)
-			if(isdigit(result.at(i)) && (i == 0 || i == 4 || i == 5))
-				return false;*/
-		
-		textLicense.push_back(OCR.GetUTF8Text());
+		textLicense.push_back(text);
 	}
 	
 	return true;
