@@ -19,10 +19,10 @@ Anpr::Anpr() :
 
 Anpr::~Anpr()
 {
-	for(auto& p : licensePlates)
-		p.release();
-	
-	sourseImage.release();
+    for(auto& p : licensePlates)
+        p.release();
+
+    sourseImage.release();
 }
 
 bool Anpr::recognize(const cv::Mat& img)
@@ -34,47 +34,47 @@ bool Anpr::recognize(const cv::Mat& img)
 
 bool Anpr::recognize()
 {
-	if(sourseImage.empty())
+    if(sourseImage.empty())
         throw std::logic_error("Images for recognize is empty.");
 
-	licensePlates.clear();
-	licenseSymbols.clear();
-	textLicense.clear();
+    licensePlates.clear();
+    licenseSymbols.clear();
+    textLicense.clear();
 
     std::vector<cv::Rect> plates;
-	
+
     cv::Mat gray;
-	
+
     cv::cvtColor(sourseImage, gray, CV_BGR2GRAY);
-	
-	bool resize = sourseImage.size().width/scale > 480 || sourseImage.size().height/scale > 320;
-	
-	if(resize)
+
+    bool resize = sourseImage.size().width/scale > 480 || sourseImage.size().height/scale > 320;
+
+    if(resize)
         cv::resize(gray, gray, cv::Size(sourseImage.size().width/scale, sourseImage.size().height/scale), 0, 0, cv::INTER_LINEAR);
 
-		
+
     cascadePlate.detectMultiScale(gray, plates,
         1.1, 10, 0,
         cv::Size(70, 21), cv::Size(500, 150));
 
-	for(auto& p : plates)
-	{
-		cv::Point plateBegin	= cv::Point(p.x*(resize ? scale : 1), p.y*(resize ? scale : 1));
+    for(auto& p : plates)
+    {
+        cv::Point plateBegin	= cv::Point(p.x*(resize ? scale : 1), p.y*(resize ? scale : 1));
         cv::Point plateEnd		= cv::Point(p.width*(resize ? scale : 1), p.height*(resize ? scale : 1));
 
         licensePlates.push_back(sourseImage(cv::Rect(plateBegin.x,
-										plateBegin.y,
-										plateEnd.x,
-										plateEnd.y)));
+                                        plateBegin.y,
+                                        plateEnd.x,
+                                        plateEnd.y)));
     }
-	
-    for(auto& p : licensePlates)
-		findLetters(p);
-		
-	if(!licenseSymbols.empty())
-		recognizeLetters();
 
-	return true;
+    for(auto& p : licensePlates)
+        findLetters(p);
+
+    if(!licenseSymbols.empty())
+        recognizeLetters();
+
+    return true;
 }
 
 std::vector<std::string> Anpr::getLicenseText() const
@@ -152,60 +152,60 @@ void Anpr::showLicensePlates()
 
 bool Anpr::findLetters(cv::Mat& src)
 {
-	std::vector<std::vector<cv::Point> > contours;
-	std::vector<mArea> contursOut;
-	std::vector<cv::Vec4i> hierarchy;
-	cv::Mat cannyOutput, srcGray, srcThreshold;
-	
-	cvtColor(src, srcGray, cv::COLOR_BGR2GRAY);
-	threshold(srcGray, srcThreshold, 0, 255, CV_THRESH_BINARY  | CV_THRESH_OTSU);
-	medianBlur(srcThreshold, srcThreshold, 5);
-	
-	double angle = getAngle(srcThreshold);
-	
-	if(showInfo)
-		std::cout << "Angle: " << angle << std::endl;
-	
-	rotateImage(srcThreshold, angle);
+    std::vector<std::vector<cv::Point> > contours;
+    std::vector<mArea> contursOut;
+    std::vector<cv::Vec4i> hierarchy;
+    cv::Mat cannyOutput, srcGray, srcThreshold;
 
-	unsigned bottomBound = getBottomBound(srcThreshold);
-	unsigned topBound	 = getTopBound(srcThreshold);
-	srcThreshold = srcThreshold(cv::Rect(0, topBound, srcThreshold.size().width, bottomBound-topBound));
-	unsigned leftBound	 = std::max(getLeftBound(srcThreshold, true), getLeftBound(srcThreshold, false));
-	unsigned rightBound	 = std::min(getRightBound(srcThreshold, true), getRightBound(srcThreshold, false));
-	
-	rotateImage(src, angle);
-	src = src(cv::Rect(leftBound, topBound, rightBound-leftBound, bottomBound-topBound));
-	
-	if(showInfo)
-	{
-		std::cout << "Left: " << leftBound << " Right: " << rightBound << std::endl;
-		
-		cv::imshow("Thresold", srcThreshold);
-		cv::imshow("Автомобильный номер", src);
+    cvtColor(src, srcGray, cv::COLOR_BGR2GRAY);
+    threshold(srcGray, srcThreshold, 0, 255, CV_THRESH_BINARY  | CV_THRESH_OTSU);
+    medianBlur(srcThreshold, srcThreshold, 5);
 
-		std::cout << "Size width: " << src.size().width << " Height: " << src.size().height << std::endl;
-	}
-	
-	if(src.size().height < 61 && src.size().width < 240)
-		cv::resize(src, src, cv::Size(240, 61));
-	
-	cvtColor(src, srcGray, cv::COLOR_BGR2GRAY);
+    double angle = getAngle(srcThreshold);
+
+    if(showInfo)
+        std::cout << "Angle: " << angle << std::endl;
+
+    rotateImage(srcThreshold, angle);
+
+    unsigned bottomBound = getBottomBound(srcThreshold);
+    unsigned topBound	 = getTopBound(srcThreshold);
+    srcThreshold = srcThreshold(cv::Rect(0, topBound, srcThreshold.size().width, bottomBound-topBound));
+    unsigned leftBound	 = std::max(getLeftBound(srcThreshold, true), getLeftBound(srcThreshold, false));
+    unsigned rightBound	 = std::min(getRightBound(srcThreshold, true), getRightBound(srcThreshold, false));
+
+    rotateImage(src, angle);
+    src = src(cv::Rect(leftBound, topBound, rightBound-leftBound, bottomBound-topBound));
+
+    if(showInfo)
+    {
+        std::cout << "Left: " << leftBound << " Right: " << rightBound << std::endl;
+
+        cv::imshow("Thresold", srcThreshold);
+        cv::imshow("Автомобильный номер", src);
+
+        std::cout << "Size width: " << src.size().width << " Height: " << src.size().height << std::endl;
+    }
+
+    if(src.size().height < 61 && src.size().width < 240)
+        cv::resize(src, src, cv::Size(240, 61));
+
+    cvtColor(src, srcGray, cv::COLOR_BGR2GRAY);
 
     if(showInfo)
         cv::imshow("Шаг 1: Перевод в Ч/Б", srcGray);
 
-	threshold(srcGray, srcGray, 0, 255, CV_THRESH_BINARY  | CV_THRESH_OTSU);
+    threshold(srcGray, srcGray, 0, 255, CV_THRESH_BINARY  | CV_THRESH_OTSU);
 
     if(showInfo)
         cv::imshow("Шаг 2: Бинаризация изображения", srcGray);
 
-	medianBlur(srcThreshold, srcThreshold, 3);
+    medianBlur(srcThreshold, srcThreshold, 3);
 
     if(showInfo)
         cv::imshow("Шаг 3: Фильтр средних частот", srcGray);
 
-	cv::blur(srcGray, srcGray, cv::Size(3,3));
+    cv::blur(srcGray, srcGray, cv::Size(3,3));
 
     if(showInfo)
         cv::imshow("Шаг 4: Применения размытия по Гауссу", srcGray);
@@ -215,45 +215,45 @@ bool Anpr::findLetters(cv::Mat& src)
     if(showInfo)
         cv::imshow("Шаг 5: Использование детектора границ Кенни", cannyOutput);
 
-	// Find contours
-	cv::findContours(cannyOutput, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+    // Find contours
+    cv::findContours(cannyOutput, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
 
-	for(auto& c : contours)
-	{
-		mArea area(c);
-		
-		if(((int)(area.height * area.width)) == 0)
-			continue;
-		
-		if(area.height < 0.3 * srcGray.size().height || 
-		area.height > 0.9 * srcGray.size().height || 
-		area.width < srcGray.size().width * 0.03 || 
-		area.width > srcGray.size().width * 0.15 ||
-		area.width > area.height ||
-		area.min.x < area.width * 0.03 ||
-		(area.min.x + area.width) > srcGray.size().width * 0.97 ||
-		isDuplicat(area, contursOut))
-			continue;
-		
-		//unsigned nz = cv::countNonZero(((srcGray)(cv::Rect(area.min.x, area.min.y, area.width, area.height))));
-		//auto ratio = (double(nz) * 100)/(area.width * area.height);
-		
-		//if(100.0-ratio < 10) // содержание чёрного в номере
-		//	continue;
-		
-		if(showInfo)
-			std::cout << "Height: " << area.height << " width: " << area.width /*<< " NZ: " << nz << " Ratio: " << 100.0-ratio*/ << "%" << " Min x: " << area.min.x << " Width: " << area.width << std::endl;
-		
-		contursOut.push_back(area);
-	}
+    for(auto& c : contours)
+    {
+        mArea area(c);
 
-	if(contursOut.size() >= 8)
-	{
-		std::sort(contursOut.begin(), contursOut.end());	// Set the symbols in the correct order
-		licenseSymbols.push_back(LicenseSymbolsArea(src, contursOut));
-	}
-	
-	return !licenseSymbols.empty();
+        if(((int)(area.height * area.width)) == 0)
+            continue;
+
+        if(area.height < 0.3 * srcGray.size().height ||
+        area.height > 0.9 * srcGray.size().height ||
+        area.width < srcGray.size().width * 0.03 ||
+        area.width > srcGray.size().width * 0.15 ||
+        area.width > area.height ||
+        area.min.x < area.width * 0.03 ||
+        (area.min.x + area.width) > srcGray.size().width * 0.97 ||
+        isDuplicat(area, contursOut))
+            continue;
+
+        //unsigned nz = cv::countNonZero(((srcGray)(cv::Rect(area.min.x, area.min.y, area.width, area.height))));
+        //auto ratio = (double(nz) * 100)/(area.width * area.height);
+
+        //if(100.0-ratio < 10) // содержание чёрного в номере
+        //	continue;
+
+        if(showInfo)
+            std::cout << "Height: " << area.height << " width: " << area.width /*<< " NZ: " << nz << " Ratio: " << 100.0-ratio*/ << "%" << " Min x: " << area.min.x << " Width: " << area.width << std::endl;
+
+        contursOut.push_back(area);
+    }
+
+    if(contursOut.size() >= 8)
+    {
+        std::sort(contursOut.begin(), contursOut.end());	// Set the symbols in the correct order
+        licenseSymbols.push_back(LicenseSymbolsArea(src, contursOut));
+    }
+
+    return !licenseSymbols.empty();
 }
 
 double Anpr::getAngle(cv::Mat& plate) // Optimized
