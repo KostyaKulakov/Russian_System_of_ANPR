@@ -1,15 +1,20 @@
 #include "anpr.h"
 
 LicenseSymbolsArea::LicenseSymbolsArea(cv::Mat& plate, std::vector<mArea>& plateAreaSymbols) :
-	plate(plate), plateAreaSymbols(plateAreaSymbols)
+    plate(plate), plateAreaSymbols(plateAreaSymbols)
 {}
 
-Anpr::Anpr() 
+Anpr::Anpr() :
+    showInfo(false)
 {
-	cascadePlateLoad = cascadePlate.load("haarcascade_russian_plate_number.xml");
-	cascadeSymbolLoad = cascadeSymbol.load("haarcascade_russian_plate_number_symbol.xml");
-	OCR.Init(NULL, "amh");
-	OCR.SetPageSegMode(tesseract::PSM_SINGLE_CHAR);
+    if(!cascadePlate.load("haarcascade_russian_plate_number.xml"))
+        throw std::logic_error("haarcascade_russian_plate_number.xml file not found.");
+
+    if(!cascadeSymbol.load("haarcascade_russian_plate_number_symbol.xml"))
+        throw std::logic_error("haarcascade_russian_plate_number_symbol.xml file not found.");
+
+    OCR.Init(NULL, "amh");
+    OCR.SetPageSegMode(tesseract::PSM_SINGLE_CHAR);
 }
 
 Anpr::~Anpr()
@@ -29,55 +34,46 @@ bool Anpr::recognize(const cv::Mat& img)
 
 bool Anpr::recognize()
 {
-	if(sourseImage.empty() && showWarning)
-	{
-		std::cerr << "Image is empty" << std::endl;
-		return false;
-	}
-	
-	if(!cascadePlateLoad || !cascadeSymbolLoad)
-	{
-		std::cerr << "Cascade not load. Check your directory \"haarcascade_russian_plate_number.xml\" \"haarcascade_russian_plate_number_symbol.xml\"" << std::endl;
-		return false;
-	}
-	
+	if(sourseImage.empty())
+        throw std::logic_error("Images for recognize is empty.");
+
 	licensePlates.clear();
 	licenseSymbols.clear();
 	textLicense.clear();
 
-	std::vector<cv::Rect> plates;
+    std::vector<cv::Rect> plates;
 	
-	cv::Mat gray;
+    cv::Mat gray;
 	
-	cv::cvtColor(sourseImage, gray, CV_BGR2GRAY);
+    cv::cvtColor(sourseImage, gray, CV_BGR2GRAY);
 	
 	bool resize = sourseImage.size().width/scale > 480 || sourseImage.size().height/scale > 320;
 	
 	if(resize)
-		cv::resize(gray, gray, cv::Size(sourseImage.size().width/scale, sourseImage.size().height/scale), 0, 0, cv::INTER_LINEAR);
+        cv::resize(gray, gray, cv::Size(sourseImage.size().width/scale, sourseImage.size().height/scale), 0, 0, cv::INTER_LINEAR);
 
 		
     cascadePlate.detectMultiScale(gray, plates,
-		1.1, 10, 0,
-		cv::Size(70, 21), cv::Size(500, 150));  
+        1.1, 10, 0,
+        cv::Size(70, 21), cv::Size(500, 150));
 
 	for(auto& p : plates)
 	{
 		cv::Point plateBegin	= cv::Point(p.x*(resize ? scale : 1), p.y*(resize ? scale : 1));
-		cv::Point plateEnd		= cv::Point(p.width*(resize ? scale : 1), p.height*(resize ? scale : 1));
+        cv::Point plateEnd		= cv::Point(p.width*(resize ? scale : 1), p.height*(resize ? scale : 1));
 
-		licensePlates.push_back(sourseImage(cv::Rect(plateBegin.x, 
+        licensePlates.push_back(sourseImage(cv::Rect(plateBegin.x,
 										plateBegin.y,
 										plateEnd.x,
 										plateEnd.y)));
-	}
+    }
 	
-	for(auto& p : licensePlates)
+    for(auto& p : licensePlates)
 		findLetters(p);
 		
 	if(!licenseSymbols.empty())
 		recognizeLetters();
-		
+
 	return true;
 }
 
@@ -94,12 +90,12 @@ std::vector<cv::Mat> Anpr::getLicensePlates() const
 
 void Anpr::setImage(const cv::Mat& img)
 {
-	this->sourseImage = img;
+    this->sourseImage = img;
 }
 
-void Anpr::setShowWarning(const bool mshowWarning)
+void Anpr::setShowInformation(const bool mShowInforamtion)
 {
-	this->showWarning = mshowWarning;
+    this->showInfo = mShowInforamtion;
 }
 
 void Anpr::saveLicensePlates()
@@ -123,7 +119,7 @@ void Anpr::showimage(std::string namewindow, cv::Mat image)
 
 void Anpr::showNormalImage(std::string namewindow)
 {
-	showimage(namewindow, sourseImage);
+    showimage(namewindow, sourseImage);
 }
 
 void Anpr::showLicensePlates()
@@ -143,7 +139,7 @@ void Anpr::showLicensePlates()
 				rectangle(img,	f.min, f.max, cv::Scalar(0,255,0), 2);				
 		}
 		
-		std::string wndname("License plate " +
+		std::string wndname("Кадр " +
 							std::to_string(nwnd));
 
 		cv::namedWindow(wndname, cv::WINDOW_AUTOSIZE);
@@ -165,9 +161,11 @@ bool Anpr::findLetters(cv::Mat& src)
 	threshold(srcGray, srcThreshold, 0, 255, CV_THRESH_BINARY  | CV_THRESH_OTSU);
 	medianBlur(srcThreshold, srcThreshold, 5);
 	
-	imshow("Before", srcThreshold);
 	double angle = getAngle(srcThreshold);
-	std::cout << "Angle: " << angle << std::endl;
+	
+	if(showInfo)
+		std::cout << "Angle: " << angle << std::endl;
+	
 	rotateImage(srcThreshold, angle);
 
 	unsigned bottomBound = getBottomBound(srcThreshold);
@@ -184,7 +182,7 @@ bool Anpr::findLetters(cv::Mat& src)
 		std::cout << "Left: " << leftBound << " Right: " << rightBound << std::endl;
 		
 		cv::imshow("Thresold", srcThreshold);
-		cv::imshow("Src", src);
+		cv::imshow("Автомобильный номер", src);
 
 		std::cout << "Size width: " << src.size().width << " Height: " << src.size().height << std::endl;
 	}
@@ -193,10 +191,29 @@ bool Anpr::findLetters(cv::Mat& src)
 		cv::resize(src, src, cv::Size(240, 61));
 	
 	cvtColor(src, srcGray, cv::COLOR_BGR2GRAY);
+
+    if(showInfo)
+        cv::imshow("Шаг 1: Перевод в Ч/Б", srcGray);
+
 	threshold(srcGray, srcGray, 0, 255, CV_THRESH_BINARY  | CV_THRESH_OTSU);
+
+    if(showInfo)
+        cv::imshow("Шаг 2: Бинаризация изображения", srcGray);
+
 	medianBlur(srcThreshold, srcThreshold, 3);
+
+    if(showInfo)
+        cv::imshow("Шаг 3: Фильтр средних частот", srcGray);
+
 	cv::blur(srcGray, srcGray, cv::Size(3,3));
-	cv::Canny(srcGray, cannyOutput, 100, 300, 3);
+
+    if(showInfo)
+        cv::imshow("Шаг 4: Применения размытия по Гауссу", srcGray);
+
+    cv::Canny(srcGray, cannyOutput, 100, 300, 3);
+
+    if(showInfo)
+        cv::imshow("Шаг 5: Использование детектора границ Кенни", cannyOutput);
 
 	// Find contours
 	cv::findContours(cannyOutput, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
@@ -218,14 +235,14 @@ bool Anpr::findLetters(cv::Mat& src)
 		isDuplicat(area, contursOut))
 			continue;
 		
-		unsigned nz = cv::countNonZero(((srcGray)(cv::Rect(area.min.x, area.min.y, area.width, area.height))));
-		auto ratio = (double(nz) * 100)/(area.width * area.height);
+		//unsigned nz = cv::countNonZero(((srcGray)(cv::Rect(area.min.x, area.min.y, area.width, area.height))));
+		//auto ratio = (double(nz) * 100)/(area.width * area.height);
 		
-		if(100.0-ratio < 15) // содержание чёрного в номере
-			continue;
+		//if(100.0-ratio < 10) // содержание чёрного в номере
+		//	continue;
 		
 		if(showInfo)
-			std::cout << "Height: " << area.height << " width: " << area.width << " NZ: " << nz << " Ratio: " << 100.0-ratio << "%" << " Min x: " << area.min.x << " Width: " << area.width << std::endl;
+			std::cout << "Height: " << area.height << " width: " << area.width /*<< " NZ: " << nz << " Ratio: " << 100.0-ratio*/ << "%" << " Min x: " << area.min.x << " Width: " << area.width << std::endl;
 		
 		contursOut.push_back(area);
 	}
@@ -315,12 +332,12 @@ unsigned Anpr::getHistTopBound(cv::Mat& plate)
 unsigned Anpr::getTopBound(cv::Mat& plate)
 {
 	//equalizeHist(plate, plate);
-	std::vector<cv::Rect> symbols;
-	
-	cascadeSymbol.detectMultiScale(plate, symbols);
+    std::vector<cv::Rect> symbols;
+
+    cascadeSymbol.detectMultiScale(plate, symbols);
 	
 	if(symbols.empty() && showInfo)
-		std::cout << "Symbols not found (((" << std::endl;
+		std::cout << "Symbols not found" << std::endl;
 	
 	std::vector<cv::Rect>::iterator result;
 	

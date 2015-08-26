@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 #include <math.h>
+#include <stdexcept>
 #include "area.h"
 
 struct LicenseSymbolsArea
@@ -43,8 +44,8 @@ public:
 	std::vector<std::string> getLicenseText() const;
 	std::vector<cv::Mat>     getLicensePlates() const;
 	
-	void setImage(const cv::Mat& img);
-	void setShowWarning(const bool mshowWarning);
+    void setImage(const cv::Mat& img);
+    void setShowInformation(const bool mShowInforamtion);
 	
 	void saveLicensePlates();
 	
@@ -53,7 +54,7 @@ public:
 	void showimage(std::string namewindow, cv::Mat image);
 	
 private:
-	bool findLetters(cv::Mat& src);
+    bool findLetters(cv::Mat& src);
 	double getAngle(cv::Mat& plate);
 	void rotateImage(cv::Mat& image, const double angle);
 	unsigned getBottomBound(cv::Mat& plate);
@@ -71,14 +72,13 @@ private:
 	const double minDegree = -10;
 	const double maxDegree = 10;
 	const double stepDegree= 0.1;
-	bool cascadePlateLoad, cascadeSymbolLoad;
-	bool showWarning;
-	bool showInfo = true;
+    bool cascadePlateLoad, cascadeSymbolLoad;
+    bool showInfo;
 
-	cv::Mat sourseImage;
+    cv::Mat sourseImage;
 	std::vector<LicenseSymbolsArea> licenseSymbols;
 	std::vector<std::string>		textLicense;
 	std::vector<cv::Mat>			licensePlates;
 	tesseract::TessBaseAPI			OCR;
-	cv::CascadeClassifier			cascadePlate, cascadeSymbol;
+    cv::CascadeClassifier			cascadePlate, cascadeSymbol;
 };

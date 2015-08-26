@@ -15,5 +15,5 @@ g++ *.cpp -lopencv_core249 -lopencv_highgui249 -lopencv_video249 -lopencv_calib3
 
 ####Screenshot
 
-![Gittip](http://files.kostyakulakov.ru/images/1.png)
-![Gittip](http://files.kostyakulakov.ru/images/2.png)
+![Gittip](http://kostyakulakov.ru/images/1.png)
+![Gittip](http://kostyakulakov.ru/images/2.png)
