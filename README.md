@@ -31,7 +31,7 @@ sudo cp -v runtime_data/haarcascade_russian_plate_number_symbol.xml src/
 g++ *.cpp  -l:libopencv_core.so.2.4.9 -l:libopencv_highgui.so.2.4.9  -l:libopencv_video.so.2.4.9  -l:libopencv_calib3d.so.2.4.9  -l:libopencv_contrib.so.2.4.9  -l:libopencv_features2d.so.2.4.9  -l:libopencv_flann.so.2.4.9  -l:libopencv_gpu.so.2.4.9  -l:libopencv_imgproc.so.2.4.9  -l:libopencv_legacy.so.2.4.9  -l:libopencv_ml.so.2.4.9  -l:libopencv_nonfree.so.2.4.9  -l:libopencv_objdetect.so.2.4.9  -l:libopencv_ocl.so.2.4.9  -l:libopencv_photo.so.2.4.9   -l:libopencv_stitching.so.2.4.9  -l:libopencv_superres.so.2.4.9  -ltesseract -llept -std=c++11 -o rusalpr
 ```
 
-* Runing app
+* Run app
 
 ```
 ./rusalpr path/to/image
